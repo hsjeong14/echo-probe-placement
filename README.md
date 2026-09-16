@@ -61,7 +61,10 @@ acceptance.
 │   │                               cloud's centroid, not a constant)
 │   ├── negative_control_chamber_visibility.py  Simulator validity check
 │   ├── compute_v4_tangential_all.py       Surface-projected error metric
-│   └── make_v4_*_figure.py                Qualitative result rendering
+│   ├── make_v4_*_figure.py                Qualitative result rendering
+│   └── run_inference.py                   Run the trained model on ONE point cloud,
+│                                            output in the exact format
+│                                            fr5_prediction_check_window.py expects
 │
 ├── isaac_sim_scripts/          Isaac Sim environment, capture, and live verification
 │   ├── fr5_prediction_check_window.py   Live tool shown above: depth capture →
@@ -95,12 +98,57 @@ set these before running anything:
 | `<CT_DATASET_ROOT>` | Directory holding the source CT volumes + segmentation masks |
 | `<SCRATCH_DIR>` | Any scratch/working directory |
 | `<GPU_WORKSTATION_IP>` | Address of your own training machine, if remote |
+| `<CHECKPOINT_PATH>` | Directory holding a trained model checkpoint (`model_best.pt`) |
 
 Training/evaluation code (`training/`) requires PyTorch, NumPy, SciPy, trimesh, and
 scikit-image. The Isaac Sim scripts (`isaac_sim_scripts/`) are run inside Isaac Sim's
 own Python environment and additionally require the project's ultrasound-simulator
 extension (CT-volume B-mode rendering) and the FR5 robot USD assets, neither of which
 are included in this snapshot.
+
+## Running inference in Isaac Sim
+
+The example phantom (`assets/example_phantom/example_case_skin.usd`) and the scripts
+below are enough to run the full loop — capture → predict → visualize/drive the robot
+— on one case, end to end, without the full patient cohort. Trained checkpoints
+aren't included in this snapshot (see **Status**); once you have one (either your own,
+trained with `training/train_v4_aux.py`, or the released checkpoint after
+acceptance), the steps are:
+
+**1. Load the scene and capture a point cloud (inside Isaac Sim).**
+Open the FR5 + ultrasound scene with `assets/example_phantom/example_case_skin.usd`
+referenced in as the torso phantom. `isaac_sim_scripts/go_to_initial_pose.py` moves
+the arm to the fixed overhead camera pose the model was trained on; from there, a
+depth-camera capture of the torso (see `isaac_sim_scripts/capture_depth_full187.py`
+for the batch-capture pattern this project uses — the same per-case logic applies to
+a single live case) gives you a point cloud in the camera frame, which then needs
+converting into the body-aligned local mm frame the model expects (bbox-centered on
+the subject's own skin mesh — see the paper's coordinate-system section for the exact
+transform). Save it as a `.npy` array of `(N, 3)` points in millimeters.
+
+**2. Run the model (standard Python, outside Isaac Sim).**
+```bash
+python training/run_inference.py \
+    --checkpoint <CHECKPOINT_PATH>/model_best.pt \
+    --pointcloud path/to/captured_pointcloud_local_mm.npy \
+    --case-id my_case \
+    --out predictions.json
+```
+This prints the predicted PLAX and A4C contact points (body-aligned local mm frame)
+and writes `predictions.json` in the exact schema
+`isaac_sim_scripts/fr5_prediction_check_window.py` reads.
+
+**3. Visualize the result and drive the robot there (back inside Isaac Sim).**
+With `fr5_ct_slice_server.py` running (`CT_NIFTI_PATH` pointing at your case's CT
+volume — needed only for the simulated B-mode preview panel, not for the position
+prediction itself) and `isaac_sim_scripts/go_to_target_pose.py` already run once in
+the same Script Editor session (its update subscription is what applies joint-angle
+changes each frame — see the comment at the top of
+`fr5_prediction_check_window.py`), point that script's predictions-file path at your
+`predictions.json`, set `CASE_ID`/`VIEW` to match, and paste-run it. This opens the
+live window shown at the top of this README: D455 depth, the point cloud with your
+predicted target, and a simulated B-mode preview at that position — with a button to
+drive the arm's probe there directly.
 
 ## Model summary
 
