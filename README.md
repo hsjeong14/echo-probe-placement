@@ -61,7 +61,6 @@ acceptance.
 │   │                               cloud's centroid, not a constant)
 │   ├── negative_control_chamber_visibility.py  Simulator validity check
 │   ├── compute_v4_tangential_all.py       Surface-projected error metric
-│   ├── make_v4_*_figure.py                Qualitative result rendering
 │   └── run_inference.py                   Run the trained model on ONE point cloud,
 │                                            output in the exact format
 │                                            fr5_prediction_check_window.py expects
