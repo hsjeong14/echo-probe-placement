@@ -44,22 +44,22 @@ acceptance.
 
 ```
 .
-├── training/                  Model, training loop, and all evaluation/ablation code
-│   ├── train_v4_aux.py            Final model: residual regression + Huber loss +
-│   │                               voxel-uniform point sampling + free anatomical
-│   │                               auxiliary supervision (heart center, sternum tip,
-│   │                               from CT segmentation masks)
-│   ├── train_v3_residual.py       Ablation: same recipe minus auxiliary supervision
-│   ├── run_multiseed.py           Baseline multi-head model, 5-seed training/eval
+├── training/                  Model, training loop, and evaluation code (latest
+│   │                           model only — see below)
+│   ├── train_v4_aux.py            The model: shared-encoder two-head PointNet,
+│   │                               residual regression + Huber loss + voxel-uniform
+│   │                               point sampling + free anatomical auxiliary
+│   │                               supervision (heart center, sternum tip, from CT
+│   │                               segmentation masks). Includes the training loop
+│   │                               and both evaluation protocols (plain + synthetic
+│   │                               patient-repositioning shift).
 │   ├── voxel_downsample_pointclouds.py   Point-cloud preprocessing
-│   ├── extract_anatomical_aux_targets.py  Derives free auxiliary targets from
+│   ├── extract_anatomical_aux_targets.py  Derives the free auxiliary targets from
 │   │                               segmentation masks (no extra annotation cost)
-│   ├── centroid_offset_baseline.py        Point-cloud-aware baseline
-│   ├── ensemble_5seed.py                  Multi-seed ensembling
+│   ├── centroid_offset_baseline.py        Point-cloud-aware baseline used for
+│   │                               comparison (predicts from the observed point
+│   │                               cloud's centroid, not a constant)
 │   ├── negative_control_chamber_visibility.py  Simulator validity check
-│   ├── standard_shifted_eval.py           Evaluation under synthetic patient
-│   │                               repositioning (translation shift)
-│   ├── baseline_shifted_eval_v2.py
 │   ├── compute_v4_tangential_all.py       Surface-projected error metric
 │   └── make_v4_*_figure.py                Qualitative result rendering
 │
