@@ -1,4 +1,4 @@
-# Learning Initial Probe Placement for Autonomous Cardiac Ultrasound
+# Patient-Specific Digital Twins for Autonomous Echocardiography: Learning Initial Probe Placement from a Single Depth Observation
 
 *Anonymous repository for double-blind review.*
 
